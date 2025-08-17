@@ -11,11 +11,17 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class ParcoursViewModel(private val repository: ParcoursRepository) : ViewModel() {
+
     val allParcours: StateFlow<List<Parcours>> = repository.allParcours
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     var editingParcours: Parcours? = null
         private set
+
+    // Variables temporaires pour stocker les infos avant validation finale
+    var temporairNom: String = ""
+    var temporairLieu: String = ""
+    var temporairDate: String = ""
 
     fun setEditingParcours(parcours: Parcours) {
         editingParcours = parcours
@@ -23,6 +29,9 @@ class ParcoursViewModel(private val repository: ParcoursRepository) : ViewModel(
 
     fun clearEditingParcours() {
         editingParcours = null
+        temporairNom = ""
+        temporairLieu = ""
+        temporairDate = ""
     }
 
     fun addParcours(nom: String, lieu: String, date: String) = viewModelScope.launch {

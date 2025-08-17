@@ -29,6 +29,7 @@ class MainActivity : ComponentActivity() {
                     composable("main") { Main(navController) }
                     composable("listeParcours") { listeParcours(navController, viewModel) }
                     composable("addParcours") { addParcours(navController, viewModel) }
+                    composable("placerObstacles") { placerObstacles(navController, viewModel) }
                 }
             }
         }

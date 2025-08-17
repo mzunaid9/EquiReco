@@ -4,4 +4,5 @@ object Routes {
     const val Main = "main"
     const val listeParcours = "listeParcours"
     const val addParcours = "addParcours"
+    const val placerObstacles = "placerObstacles"
 }
