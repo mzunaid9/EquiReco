@@ -7,10 +7,12 @@ import android.graphics.Paint
 import android.net.Uri
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -22,7 +24,6 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.Alignment
 import androidx.core.content.FileProvider
 import androidx.navigation.NavController
 import com.example.equireco.data.ParcoursRepository
@@ -41,7 +42,6 @@ fun AddEditObstaclesScreen(
     val context = LocalContext.current
     val obstacles = remember { mutableStateListOf<Obstacle>().apply { addAll(parcours.obstacles) } }
     var selectedIndex by remember { mutableStateOf<Int?>(null) }
-
     var obstacleNumber by remember { mutableStateOf("") }
     var selectedColor by remember { mutableStateOf(Color.Red) }
 
@@ -54,7 +54,6 @@ fun AddEditObstaclesScreen(
                     .padding(16.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Bouton Enregistrer
                 Button(
                     onClick = {
                         parcours.obstacles = obstacles.toMutableList()
@@ -64,16 +63,14 @@ fun AddEditObstaclesScreen(
                     modifier = Modifier.weight(1f)
                 ) { Text("Enregistrer") }
 
-                // Bouton Partager
                 Button(
                     onClick = {
-                        // Création bitmap
                         val bitmap = Bitmap.createBitmap(1080, 1920, Bitmap.Config.ARGB_8888)
                         val canvas = android.graphics.Canvas(bitmap)
                         val paint = Paint().apply { textSize = 36f }
-
                         val w = 140f
                         val h = 70f
+
                         obstacles.forEach { o ->
                             paint.color = Color(android.graphics.Color.parseColor(o.colorHex)).toArgb()
                             canvas.save()
@@ -84,11 +81,9 @@ fun AddEditObstaclesScreen(
                             canvas.drawText(o.number, o.posX + w / 2f, o.posY + h / 2f + 12f, paint)
                         }
 
-                        // Sauvegarde temporaire
                         val file = File(context.cacheDir, "parcours_${parcours.name}.png")
                         FileOutputStream(file).use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
 
-                        // Partage via FileProvider
                         val uri: Uri = FileProvider.getUriForFile(
                             context,
                             "${context.packageName}.provider",
@@ -113,44 +108,51 @@ fun AddEditObstaclesScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Ligne d’ajout
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+
+            // Champ numéro et couleurs (champ au-dessus des couleurs)
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = obstacleNumber,
                     onValueChange = { obstacleNumber = it },
-                    label = { Text("Numéro") },
-                    modifier = Modifier.weight(1f)
+                    label = { Text("Numéro (ex: 1, 11A)") },
+                    modifier = Modifier.fillMaxWidth()
                 )
-                listOf(Color.Red, Color.Blue, Color.Green, Color.Yellow).forEach { c ->
-                    Button(
-                        onClick = { selectedColor = c },
-                        colors = ButtonDefaults.buttonColors(containerColor = c),
-                        modifier = Modifier.size(40.dp),
-                        content = {}
-                    )
-                }
-                Button(onClick = {
-                    if (obstacleNumber.isNotBlank()) {
-                        val hex = "#%08X".format(selectedColor.toArgb())
-                        obstacles.add(
-                            Obstacle(
-                                number = obstacleNumber,
-                                colorHex = hex,
-                                posX = 100f,
-                                posY = 100f,
-                                rotation = 0f
-                            )
+
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(Color.Red, Color.Blue, Color.Green, Color.Yellow).forEach { c ->
+                        Button(
+                            onClick = { selectedColor = c },
+                            colors = ButtonDefaults.buttonColors(containerColor = c),
+                            modifier = Modifier.size(40.dp),
+                            content = {}
                         )
-                        obstacleNumber = ""
-                        selectedIndex = obstacles.lastIndex
                     }
-                }) { Text("Ajouter") }
+
+                    Button(onClick = {
+                        if (obstacleNumber.isNotBlank()) {
+                            val hex = "#%08X".format(selectedColor.toArgb())
+                            obstacles.add(
+                                Obstacle(
+                                    number = obstacleNumber,
+                                    colorHex = hex,
+                                    posX = 100f,
+                                    posY = 100f,
+                                    rotation = 0f
+                                )
+                            )
+                            obstacleNumber = ""
+                            selectedIndex = obstacles.lastIndex
+                        }
+                    }) { Text("Ajouter") }
+                }
             }
 
+            // Zone de dessin
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(Color(0xFFEFEFEF))
+                    .border(2.dp, Color.Gray)
             ) {
                 Canvas(
                     modifier = Modifier
@@ -215,7 +217,7 @@ fun AddEditObstaclesScreen(
                                 .padding(16.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text("Obstacle sélectionné : ${o.number}")
+                            Text("Obstacle sélectionné : ${o.number}", style = MaterialTheme.typography.bodyLarge)
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Button(onClick = { obstacles[i] = o.copy(rotation = (o.rotation + 15f) % 360f) }) { Text("⟳") }
                                 Button(onClick = { obstacles[i] = o.copy(rotation = (o.rotation - 15f + 360f) % 360f) }) { Text("⟲") }
@@ -228,3 +230,4 @@ fun AddEditObstaclesScreen(
         }
     }
 }
+;

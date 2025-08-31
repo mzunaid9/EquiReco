@@ -3,10 +3,14 @@ package com.example.equireco
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.IntSize
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -17,46 +21,74 @@ import com.example.equireco.screen.AddEditObstaclesScreen
 import com.example.equireco.screen.AddEditParcoursScreen
 import com.example.equireco.screen.HomeScreen
 import com.example.equireco.ui.theme.EquiRecoTheme
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
-    private lateinit var repository: ParcoursRepository
 
-    @OptIn(ExperimentalMaterial3Api::class)
+    private lateinit var parcoursRepository: ParcoursRepository
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // ✅ ici on passe bien le context
-        repository = ParcoursRepository(applicationContext)
+        parcoursRepository = ParcoursRepository(this)
 
         setContent {
             EquiRecoTheme {
-                val navController = rememberNavController()
-                Scaffold { padding ->
-                    AppNavHost(navController, repository)
-                }
-            }
-        }
-    }
-}
+                Surface(color = MaterialTheme.colorScheme.background) {
+                    var showSplash by remember { mutableStateOf(true) }
 
-@Composable
-fun AppNavHost(navController: NavHostController, repository: ParcoursRepository) {
-    NavHost(navController = navController, startDestination = "home") {
-        composable("home") {
-            HomeScreen(navController, repository)
-        }
-        composable("addEditParcours/{index}") { backStackEntry ->
-            val index = backStackEntry.arguments?.getString("index")?.toIntOrNull() ?: -1
-            val parcours = if (index >= 0) repository.getParcours(index) else null
-            AddEditParcoursScreen(navController, repository, index, parcours)
-        }
-        composable("addEditObstacles/{index}") { backStackEntry ->
-            val index = backStackEntry.arguments?.getString("index")?.toIntOrNull() ?: -1
-            val parcours = repository.getParcours(index)
-            if (parcours != null) {
-                AddEditObstaclesScreen(navController, repository, index, parcours)
-            } else {
-                Text("Parcours introuvable")
+                    // Affiche le splash pendant 2 secondes
+                    if (showSplash) {
+                        LaunchedEffect(Unit) {
+                            delay(2000)
+                            showSplash = false
+                        }
+
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.logo),
+                                contentDescription = "Logo",
+                                modifier = Modifier.size(200.dp)
+                            )
+                        }
+
+                    } else {
+                        // App normale
+                        val navController: NavHostController = rememberNavController()
+                        NavHost(navController = navController, startDestination = "home") {
+                            composable("home") {
+                                HomeScreen(navController, parcoursRepository)
+                            }
+                            composable("addEditParcours/{index}") { backStack ->
+                                val index = backStack.arguments?.getString("index")?.toIntOrNull()
+                                val parcours: Parcours? =
+                                    index?.takeIf { it >= 0 }?.let { parcoursRepository.getParcours(it) }
+                                AddEditParcoursScreen(
+                                    navController = navController,
+                                    parcoursRepository = parcoursRepository,
+                                    parcoursIndex = index,
+                                    existingParcours = parcours
+                                )
+                            }
+                            composable("addEditObstacles/{index}") { backStack ->
+                                val index = backStack.arguments?.getString("index")?.toIntOrNull()
+                                val parcours = index?.let { parcoursRepository.getParcours(it) }
+                                if (index != null && parcours != null) {
+                                    AddEditObstaclesScreen(
+                                        navController = navController,
+                                        parcoursRepository = parcoursRepository,
+                                        parcoursIndex = index,
+                                        parcours = parcours
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }

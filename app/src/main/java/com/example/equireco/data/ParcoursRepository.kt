@@ -7,10 +7,9 @@ import com.google.gson.reflect.TypeToken
 import java.io.File
 
 class ParcoursRepository(private val context: Context) {
-    private val gson = Gson()
-    private val fileName = "parcours.json"
-    private val file: File get() = File(context.filesDir, fileName)
 
+    private val fileName = "parcours.json"
+    private val gson = Gson()
     private val parcoursList = mutableListOf<Parcours>()
 
     init {
@@ -42,16 +41,17 @@ class ParcoursRepository(private val context: Context) {
 
     private fun saveToFile() {
         val json = gson.toJson(parcoursList)
+        val file = File(context.filesDir, fileName)
         file.writeText(json)
     }
 
     private fun loadFromFile() {
+        val file = File(context.filesDir, fileName)
         if (file.exists()) {
             val json = file.readText()
-            val type = object : TypeToken<List<Parcours>>() {}.type
-            val data: List<Parcours> = gson.fromJson(json, type) ?: emptyList()
-            parcoursList.clear()
-            parcoursList.addAll(data)
+            val type = object : TypeToken<MutableList<Parcours>>() {}.type
+            val list: MutableList<Parcours> = gson.fromJson(json, type) ?: mutableListOf()
+            parcoursList.addAll(list)
         }
     }
 }
